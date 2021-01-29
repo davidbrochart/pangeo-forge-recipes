@@ -39,12 +39,25 @@ dates = Dates(t0, t1, dt)
 
 input_urls = [f'https://jsimpsonhttps.pps.eosdis.nasa.gov/imerg/late/{t.year}{t.month:02}/3B-HHR-L.MS.MRG.3IMERG.{t.year}{t.month:02}{t.day:02}-S{t.hour:02}{t.minute:02}00-E{t.hour:02}{t.minute+29}59.{t.hour*60+t.minute:04}.V06B.RT-H5' for t in iter(dates)]
 
+def add_time(ds, name):
+    fname = name[name.rfind('/') + 1:]
+    year = int(fname[23:27])
+    month = int(fname[27:29])
+    day = int(fname[29:31])
+    hour = int(fname[33:35])
+    minute = int(fname[35:37]) + 15
+    t = datetime(year, month, day, hour, minute)
+    ds = ds.assign_coords(time=[t])
+    return ds
+
+
 recipe = NetCDFtoZarrSequentialRecipe(
     input_urls=input_urls,
     sequence_dim="time",
     inputs_per_chunk=4,
     xarray_open_kwargs={'group': 'Grid', 'drop_variables': ['time_bnds', 'lon_bnds', 'lat_bnds']},
-    fsspec_open_kwargs={'client_kwargs': {'auth': aiohttp.BasicAuth(os.environ['GPM_IMERG_USERNAME'], os.environ['GPM_IMERG_PASSWORD'])}}
+    fsspec_open_kwargs={'client_kwargs': {'auth': aiohttp.BasicAuth(os.environ['GPM_IMERG_USERNAME'], os.environ['GPM_IMERG_PASSWORD'])}},
+    process_input=add_time,
 )
 
 fs_local = LocalFileSystem()
