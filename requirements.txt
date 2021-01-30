@@ -2,5 +2,6 @@ aiohttp
 fsspec
 cftime
 h5netcdf
+prefect
 git+https://github.com/pangeo-forge/pangeo-forge.git
 git+https://github.com/pangeo-data/rechunker.git

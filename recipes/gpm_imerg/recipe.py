@@ -2,13 +2,16 @@ import os
 import sys
 import logging
 import tempfile
+import shutil
 from datetime import datetime, timedelta
 
 import aiohttp
 from fsspec.implementations.local import LocalFileSystem
+#import gcsfs
 
 from pangeo_forge.recipe import NetCDFtoZarrSequentialRecipe
 from pangeo_forge.storage import CacheFSSpecTarget, FSSpecTarget
+from pangeo_forge.executors import PythonPipelineExecutor#, PrefectPipelineExecutor
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -65,17 +68,22 @@ fs_local = LocalFileSystem()
 cache_dir = tempfile.TemporaryDirectory()
 cache_target = CacheFSSpecTarget(fs_local, cache_dir.name)
 
-target_dir = tempfile.TemporaryDirectory()
-target = FSSpecTarget(fs_local, target_dir.name)
+this_dir = os.path.dirname(os.path.abspath(__file__))
+target_dir_name = os.path.join(this_dir, 'gpm_imerg.zarr')
+if os.path.exists(target_dir_name):
+    shutil.rmtree(target_dir_name)
+os.mkdir(target_dir_name)
+target = FSSpecTarget(fs_local, target_dir_name)
 
 recipe.input_cache = cache_target
 recipe.target = target
 
-all_chunks = list(recipe.iter_chunks())
+#fs = gcsfs.GCSFileSystem(project='my-google-project')
+#cache_target = CacheFSSpecTarget(fs_local, 'gs://pangeo-forge-scratch/cache/gpm_imerg.zarr')
+#target = FSSpecTarget(fs_local, 'gs://pangeo-forge-scratch/gpm_imerg.zarr')
 
-for input_file in recipe.inputs_for_chunk(all_chunks[0]):
-    recipe.cache_input(input_file)
-
-recipe.prepare_target()
-
-recipe.store_chunk(all_chunks[0])
+pipeline = recipe.to_pipelines()
+#executor = PrefectPipelineExecutor()
+executor = PythonPipelineExecutor()
+plan = executor.pipelines_to_plan(pipeline)
+executor.execute_plan(plan)
