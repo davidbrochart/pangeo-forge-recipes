@@ -16,7 +16,8 @@ from pangeo_forge.executors import PythonPipelineExecutor#, PrefectPipelineExecu
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 t0 = datetime(2000, 6, 1)
-t1 = datetime(2021, 1, 1)
+#t1 = datetime(2021, 1, 1)
+t1 = datetime(2000, 6, 1, 2)
 dt = timedelta(minutes=30)
 
 class Dates:
@@ -57,7 +58,8 @@ def add_time(ds, name):
 recipe = NetCDFtoZarrSequentialRecipe(
     input_urls=input_urls,
     sequence_dim="time",
-    inputs_per_chunk=4,
+    #inputs_per_chunk=4,
+    inputs_per_chunk=2,
     xarray_open_kwargs={'group': 'Grid', 'drop_variables': ['time_bnds', 'lon_bnds', 'lat_bnds']},
     fsspec_open_kwargs={'client_kwargs': {'auth': aiohttp.BasicAuth(os.environ['GPM_IMERG_USERNAME'], os.environ['GPM_IMERG_PASSWORD'])}},
     process_input=add_time,
